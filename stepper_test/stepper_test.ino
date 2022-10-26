@@ -10,15 +10,13 @@ MCP3202 hiResAdc1 = MCP3202(adcCS1);
 MCP3202 hiResAdc2 = MCP3202(adcCS2); 
 
 
-
-
 //============================================================================================================
 //              SETUP
 //============================================================================================================
 void setup() {
 
   //serial port
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("bpm: "+String(bpm));
   Serial.println("expTime: "+String(expTime));
   Serial.println("inspTime: "+String(inspTime));
@@ -45,6 +43,7 @@ void setup() {
 void loop() {
 next_limit(expTime);
 next_limit(inspTime);
+read_pressure();
 
 }
 //============================================================================================================
@@ -71,6 +70,7 @@ void home_piston(int speedRPM){
 void next_limit(int duration){
   float steps_breath = (steps_turn*gear_ratio)/2;
   delayTime = int(((duration*1000000)/steps_breath)/2); // get the time per step (divide by two because this delayTime is used twice per step)
+  //previousDelayTime = newDelayTime;
 Serial.println("MOVE OUT OF LIMIT");
   //move out of the limit trigger area at the above calculated speed
   while(digitalRead(limit_pin)==LOW){
@@ -97,29 +97,26 @@ Serial.println("BREATH");
 
 void read_pressure(){
   lungPressure = ((hiResAdc1.readChannel(1)*mcpADCmv)-lungPressureOffset)/L20Dsensitivity;
-  dpfsPressure = ((hiResAdc1.readChannel(0)*mcpADCmv)-dpfsPressureOffset)/L05Dsensitivity;
-  fanPressure = ((hiResAdc2.readChannel(0)*mcpADCmv)-dpfsPressureOffset)/L20Dsensitivity;
-  //fanCurrent = ((hiResAdc2.readChannel(1)*mcpADCmv)-2500)*5; //in mA
+  dpfsPressure = ((hiResAdc1.readChannel(0)*mcpADCmv)-dpfsPressureOffset)/L20Dsensitivity;
+  Serial.println(lungPressure);
 
 return;
 }
 //==================================Pressure sensor offset calibration routine========================== 
 //(note this is blocking code and should only run when the ventilator is idle and not connected to the patient breathing circuit)
 void get_pressure_offset(){
-  float fpSum=0, dpfsSum=0, lpSum=0;
+  float dpfsSum=0, lpSum=0;
   
   for (int i = 0; i < 50; ++i){
         dpfsSum += hiResAdc1.readChannel(0);
-        fpSum += hiResAdc2.readChannel(0);
         lpSum += hiResAdc1.readChannel(1);
         delay(5);
         }
         
   lungPressureOffset = (lpSum/50.0)*mcpADCmv;
   dpfsPressureOffset = (dpfsSum/50.0)*mcpADCmv;
-  fanPressureOffset = (fpSum/50.0)*mcpADCmv;
-  //Serial.println(lungPressureOffset);
-  //Serial.println(dpfsPressureOffset);
-  //Serial.println(fanPressureOffset);
+  Serial.println(lungPressureOffset);
+  Serial.println(dpfsPressureOffset);
+
 return;
 }

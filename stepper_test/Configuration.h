@@ -1,7 +1,7 @@
 #define bpm 20
-#define ie_ratio 0.25
+#define ie_ratio 0.5
 
-#define steps_turn 200
+#define steps_turn 400
 #define gear_ratio 3.6 //(72/20)
 
 #define limit_pin 7
@@ -10,8 +10,8 @@
 #define en 10
 
 //check which pins are used in the Mega prototype
-#define adcCS1 SS
-#define adcCS2 4
+#define adcCS1 48
+#define adcCS2 49
 
 //ADC parameters
 #define ADC_mV 4.8828125            // conversion multiplier for Atmega 2560 ADC in mV per unit

@@ -11,5 +11,8 @@ float fanPressure = 0;
 
 //==========calculated globale variables
 int delayTime;
+int previousDelayTime;
+int newDelayTime;
+int delayChange;
 float inspTime = ((60/bpm)/(1+ie_ratio))*ie_ratio;
 float expTime = (60/bpm)/(1+ie_ratio);
