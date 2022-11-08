@@ -74,7 +74,7 @@ void next_limit(int duration){
 Serial.println("MOVE OUT OF LIMIT");
   //move out of the limit trigger area at the above calculated speed
   int stepsToDebounce = 0;
-  while(stepsToDebounce<130){//digitalRead(limit_pin)==LOW){
+  while(stepsToDebounce<500){//digitalRead(limit_pin)==LOW){
     stepsToDebounce++;
     digitalWrite(pulse, HIGH);
     delayMicroseconds(delayTime);
