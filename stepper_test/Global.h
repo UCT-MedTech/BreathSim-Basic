@@ -16,3 +16,5 @@ int newDelayTime;
 int delayChange;
 float inspTime = ((60/bpm)/(1+ie_ratio))*ie_ratio;
 float expTime = (60/bpm)/(1+ie_ratio);
+
+int debounceSteps = 300;

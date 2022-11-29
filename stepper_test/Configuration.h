@@ -1,4 +1,4 @@
-#define bpm 20
+#define bpm 25
 #define ie_ratio 0.5
 
 #define steps_turn 400
@@ -8,7 +8,7 @@
 #define pulse 8
 #define dir 9
 #define en 10
-
+#define breath_pin 19
 //check which pins are used in the Mega prototype
 #define adcCS1 48
 #define adcCS2 49
