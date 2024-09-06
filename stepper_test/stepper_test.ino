@@ -4,6 +4,7 @@
 #include "Global.h"
 #include <MCP3202.h>
 #include <SPI.h>
+#include <LiquidCrystal.h>
 
 
 MCP3202 hiResAdc1 = MCP3202(adcCS1); 
@@ -35,18 +36,20 @@ void setup() {
   hiResAdc1.begin();
   hiResAdc2.begin();
   get_pressure_offset();
-  home_piston(1);
+  //home_piston(1);
   delay(2000);
 }
 //============================================================================================================
 //              MAIN LOOP
 //============================================================================================================
 void loop() {
-outputBreathPulse();
-next_limit(expTime);
+  move_cont(expTime/2);
+  
+//outputBreathPulse();
+//next_limit(expTime);
 
-outputBreathPulse();
-next_limit(inspTime);
+//outputBreathPulse();
+//next_limit(inspTime);
 //read_pressure();
 
 }
@@ -144,3 +147,46 @@ void outputBreathPulse(){
       //toggle the state of the breathpin:
   digitalWrite(breath_pin, !digitalRead(breath_pin));
     }
+
+void move_cont(float duration){
+  unsigned int steps_per_rotation = steps_turn*gear_ratio;
+  unsigned int steps_completed =0;
+//weirdly fragmetned calculation
+  float steps_breath = (float(steps_turn)*float(gear_ratio))/2.0;
+  previousDelayTime = delayTime;
+  float temp = (float(duration)*1000000.0)/steps_breath;
+  delayTime = int(temp/2.0); // get the time per step (divide by two because this delayTime is used twice per step)
+ 
+  int stepsToDebounce = 0;
+  int accel_step_change = int((float(delayTime)-float(previousDelayTime))/float(debounceSteps));
+  
+  while(stepsToDebounce<debounceSteps){
+    
+    stepsToDebounce++;
+    //if target speed not yet reached adjust the delay between steps to accelerate
+    if(accel_step_change<0 && previousDelayTime>= delayTime){
+    previousDelayTime+=accel_step_change;}
+    else if(accel_step_change>0 && previousDelayTime<= delayTime){
+    previousDelayTime+=accel_step_change;}      
+
+    //move one step
+    digitalWrite(pulse, HIGH);
+    delayMicroseconds(previousDelayTime);
+    digitalWrite(pulse, LOW);
+    delayMicroseconds(previousDelayTime);
+  }
+  
+  Serial.println(previousDelayTime);
+  Serial.println(delayTime);
+  //move at the above calculated speed until the half breath is complete
+  while(steps_completed < steps_per_rotation){
+    digitalWrite(pulse, HIGH);
+    delayMicroseconds(delayTime);
+    digitalWrite(pulse, LOW);
+    delayMicroseconds(delayTime);
+    steps_completed++;
+  }
+  Serial.println("DONE WITH BREATH");
+  return;
+  return;
+}
