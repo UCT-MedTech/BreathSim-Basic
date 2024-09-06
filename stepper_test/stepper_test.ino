@@ -4,11 +4,14 @@
 #include "Global.h"
 #include <MCP3202.h>
 #include <SPI.h>
-#include <LiquidCrystal.h>
+#include <ContinuousStepper.h>
 
 
 MCP3202 hiResAdc1 = MCP3202(adcCS1); 
 MCP3202 hiResAdc2 = MCP3202(adcCS2); 
+
+ContinuousStepper<StepperDriver> stepper;
+
 
 
 //============================================================================================================
@@ -24,93 +27,51 @@ void setup() {
 
   //pin setup
   pinMode(limit_pin, INPUT_PULLUP);
-  pinMode(pulse, OUTPUT);
-  pinMode(en, OUTPUT);
-  pinMode(dir, OUTPUT);
   pinMode(breath_pin, OUTPUT);
-  digitalWrite(en, LOW);
-  digitalWrite(dir, HIGH);
-  digitalWrite(pulse, LOW);
+  pinMode(en, OUTPUT);
+  pinMode(on_off_pin, INPUT_PULLUP);
+
+  //disable the stepper motor
+  digitalWrite(en, HIGH);
+
+  stepper.begin(/*step=*/pulse, /*dir=*/dir);
 
   //initialisation functions:
   hiResAdc1.begin();
   hiResAdc2.begin();
   get_pressure_offset();
-  //home_piston(1);
   delay(2000);
+  
 }
 //============================================================================================================
 //              MAIN LOOP
 //============================================================================================================
 void loop() {
-  move_cont(expTime/2);
-  
-//outputBreathPulse();
-//next_limit(expTime);
-
-//outputBreathPulse();
-//next_limit(inspTime);
-//read_pressure();
+  if(digitalRead(on_off_pin)){
+    if(startFlag){
+      steps_per_sec = int((float(bpm)/60.0)*steps_turn*gear_ratio);
+      digitalWrite(en, LOW);
+      stepper.spin(steps_per_sec);
+      //enable the stepper motor
+      startFlag=false;
+    }
+    stepper.loop(); 
+  }else{
+    startFlag=true;
+    stepper.spin(0);
+    stepper.loop(); 
+    //disable the stepper motor
+    digitalWrite(en, HIGH);
+  }
 
 }
 //============================================================================================================
 //              FUNCTIONS
 //============================================================================================================
-void home_piston(int speedRPM){
-  float steps_r = steps_turn*gear_ratio;
-  float microseconds_rotation = 60000000/speedRPM;
-  delayTime = int(microseconds_rotation/4);
-  if(digitalRead(limit_pin)){
-    Serial.println("HIGH");
-  }
-  Serial.println("Homing");
-  while(digitalRead(limit_pin)==HIGH){
-    digitalWrite(pulse, HIGH);
-    delayMicroseconds(delayTime);
-    digitalWrite(pulse, LOW);
-    delayMicroseconds(delayTime);
-  }
-  Serial.println("done Homing");
-  return;
-}
+
 //============================================================================================================
 //move at a fixed speed up to the next trigger of the limit switch that measures cylinder endpoints
-void next_limit(float duration){
 
-  //weirdly fragmetned calculation
-  float steps_breath = (float(steps_turn)*float(gear_ratio))/2.0;
-  previousDelayTime = delayTime;
-  float temp = (float(duration)*1000000.0)/steps_breath;
-  delayTime = int(temp/2.0); // get the time per step (divide by two because this delayTime is used twice per step)
- 
-  int stepsToDebounce = 0;
-  int accel_step_change = int((float(delayTime)-float(previousDelayTime))/float(debounceSteps));
-  while(stepsToDebounce<debounceSteps){
-    
-    stepsToDebounce++;
-    if(accel_step_change<0 && previousDelayTime>= delayTime){
-    previousDelayTime+=accel_step_change;}
-    else if(accel_step_change>0 && previousDelayTime<= delayTime){
-    previousDelayTime+=accel_step_change;}      
-
-    
-    digitalWrite(pulse, HIGH);
-    delayMicroseconds(previousDelayTime);
-    digitalWrite(pulse, LOW);
-    delayMicroseconds(previousDelayTime);
-  }
-Serial.println(previousDelayTime);
-Serial.println(delayTime);
-  //move at the above calculated speed until the half breath is complete
-  while(digitalRead(limit_pin)==HIGH){
-    digitalWrite(pulse, HIGH);
-    delayMicroseconds(delayTime);
-    digitalWrite(pulse, LOW);
-    delayMicroseconds(delayTime);
-  }
-  Serial.println("DONE WITH BREATH");
-  return;
-}
 
 
 //============================================================================================================
